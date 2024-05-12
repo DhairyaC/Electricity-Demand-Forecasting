@@ -18,8 +18,8 @@ In this project, our goal is to measure how daily temperatures affect electricit
    - Auto-correlation and Spectral Density
    - Cross-correlation and Coherence
    - F-Test/Analysis of Variance (ANOVA) Test
-   - AIC/BIC metric
    - A/B Testing
+   - AIC/BIC metric
 2. Models:
    - Linear Difference Equations with different orders (lags) and cyclic components
    - Auto Regressive Moving Average (ARMA/ARMAX) with different orders (lags) and cyclic components
