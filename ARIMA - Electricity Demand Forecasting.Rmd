@@ -1,0 +1,27 @@
+---
+title: "HW6"
+author: "Dhairya Jayesh Chheda"
+date: "2024-04-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## y(t) = [β0 + β1·x(t−1) + α1·y(t−1) + α2·y(t−2) + w(t) + θ1·w(t−1) + θ2·w(t−2)]
+## two inputs : x0 = 1 and x(t-1)
+## ARIMAX side 5/7
+## G = [1, 0]
+## AR(2) and MA(2)
+## C is a 3x1 matrix [1, 0, 0]
+## F = [1, 0, 0]
+
+## check the eigen values of F using alpha1 and alpha2
+
+## if the eigenvalue is less than 1, it is stable
+## if the eigenvalue is complex, it is stable with oscillations
+## if the eigenvalue is greater than 1, it is unstable
+
+## the above model is not stable mostly
+
