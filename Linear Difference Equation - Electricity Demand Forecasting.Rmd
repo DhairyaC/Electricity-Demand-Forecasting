@@ -1,0 +1,238 @@
+---
+title: "HW5 - Practical"
+author: "Dhairya Jayesh Chheda"
+date: "2024-03-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 2
+
+```{r}
+data = readxl::read_excel("/Users/dhairya/Documents/Time Series Analysis/Project/dataset.xlsx")
+```
+
+```{r}
+head(data, 5)
+```
+
+```{r}
+Y <- data$demand - mean(data$demand)
+demand <- Y
+x <- data$max_temperature - mean(data$max_temperature)
+```
+
+#### Models
+
+##### Simple Model : y(t) = b_0 + b_1 · y(t − 1) + b_2 · x(t) + b_3 · cos(2\pi f_1t) + b_4 · sin(2\pi f_1t) + b_5 · cos(2\pi f_2t) + b_6 · sin(2\pi f_2t) + w(t)
+##### Complex Model : y(t) = b_0 + b_1 · y(t − 1) + b_2 · y(t - 2) + b_3 · y(t - 3) + b_4 · x(t) + b_5 · x(t − 1) + b_6 · x(t - 2) + b_7 · x(t - 3) + b_8 · cos(2\pi f_1t) + b_9 · sin(2\pi f_1t) + b_{10} · cos(2\pi f_2t) + b_{11} · sin(2\pi f_2t) + w(t)
+#####  Third Model : y(t) = b_0 + b_1 · y(t − 1) + b_2 · x(t) + b_3 · x(t − 1) + b_4 · x(t - 2) + b_5 · cos(2\pi f_1t) + b_6 · cos(2\pi f_2t) + b_7 · sin(2\pi f_2t) + w(t)
+
+```{r}
+N = length(Y)
+
+f1 = .1428571 # in previous assignment we found that f1 and f2
+f2 = .2857143 # are two frequencies where the signal has seasonal trend
+time = 1:N
+cos1 = cos(2*pi*time*f1)[4:N]
+sin1 = sin(2*pi*time*f1)[4:N]
+cos2 = cos(2*pi*time*f2)[4:N]
+sin2 = sin(2*pi*time*f2)[4:N]
+
+dY_1 = filter(Y,c(0,1),sides=1)
+dY_2 = filter(Y,c(0,0,1),sides=1)
+dY_3 = filter(Y,c(0,0,0,1),sides=1)
+dx_1 = filter(x,c(0,1),sides=1)
+dx_2 = filter(x,c(0,0,1),sides=1)
+dx_3 = filter(x,c(0,0,0,1),sides=1)
+
+Y = Y[4:N]
+x = x[4:N]
+dY_1 = dY_1[4:N]
+dY_2 = dY_2[4:N]
+dY_3 = dY_3[4:N]
+dx_1 = dx_1[4:N]
+dx_2 = dx_2[4:N]
+dx_3 = dx_3[4:N]
+```
+
+
+## Question 3
+
+```{r}
+res1 = lm(Y~dY_1+x+cos1+sin1+cos2+sin2)  # 5 params
+res2 = lm(Y~dY_1+dY_2+dY_3+x+dx_1+dx_2+dx_3+cos1+sin1+cos2+sin2) # 10 params
+res3 = lm(Y~dY_1+x+dx_1+dx_2+cos1+cos2+sin2) # 6 params
+```
+
+```{r}
+summary(res1) # Simple model
+```
+
+```{r}
+summary(res2) # Complex model
+```
+
+```{r}
+summary(res3) # Third model
+```
+
+
+## Question 4
+
+```{r}
+anova(res1, res2)
+```
+##### Since the simple model is nested within the complex model, we can do an F-test to check if the variance captured by both models is same. By looking at the F-test, we see that we get a p-value < 0.01 significance level, which means we can reject the Null Hypothesis (H0) and accept the Alternate Hypothesis (H1),i.e. both the models (simple vs complex) are not same.
+
+
+## Question 5
+
+```{r}
+# res1 (simple model), res2 (complex model), res3 (third model)
+AIC(res1, res2, res3)
+```
+
+```{r}
+# res1 (simple model), res2 (complex model), res3 (third model)
+BIC(res1, res2, res3)
+```
+
+##### By looking at the AIC and BIC metric, we can see that the complex model (res2), with an adjusted R_square=0.7835 is the best as it has the lowest AIC and BIC scores.
+
+
+## Question 6
+
+##### The reason that the complex model (res2) is the best model out of the three is because of the following reasons:
+##### 1. Highest Multiple R-squared and Adjusted R-squared.
+##### 2. Lowest AIC score.
+##### 3. Lowest BIC score.
+
+
+## Question 7
+
+```{r}
+dRes = res2$residuals
+plot.ts(dRes)
+```
+
+```{r}
+acf(dRes, 30, main="output")
+```
+
+```{r}
+Box.test(dRes,lag = 5, type = 'Box-Pierce')
+```
+
+```{r}
+spectrum(dRes, log="no")
+```
+
+##### By looking at the residual plot, it looks like the mean is close to 0 and variance is somewhat constant.
+##### From the Box-Pierce test, we can say that there is no significant evidence of auto-correlation up to lag 5 components. The Box-Pierce test also gives a p-value = 0.1926 > 0.05 significance level, therefore we cannot reject the Null Hypothesis (H0) that the autocorrelation at different lag components is 0. Thus, we can conclude that the residuals are white noise.
+##### The ACF and periodogram has small evidence of strong autocorrelation except for a major spike at around 0.429333 (which can further be handled by adding sinusoids).
+
+
+## Question 8
+
+##### There is no need to solve this because we already observed that the residuals are white noise. However, to verify it again, we can add more output feedback terms (increase the lag of p of the output feedback) and see the p-value of the box-pierce test.
+
+```{r}
+# Box.test(dRes, lag = 10, type = 'Box-Pierce')
+```
+
+
+## Question 9
+
+```{r}
+N = 100
+x = array(0, dim=c(N,1))
+x[N/2] = 1 
+
+# Create a step input
+Sx = array(0, dim = c(N,1))
+sum = 0
+for (index in 1:N) {
+  sum = sum + x[index]
+  Sx[index] = sum 
+}
+x = Sx
+
+Y = array(0, dim=c(N,1))
+YI = array(0, dim=c(N,1))
+
+# coefficients from our linear difference eq model
+b0 = res2$coefficients[1]
+b1 = res2$coefficients[2]
+b2 = res2$coefficients[3]
+b3 = res2$coefficients[4]
+b4 = res2$coefficients[5]
+b5 = res2$coefficients[6]
+b6 = res2$coefficients[7]
+b7 = res2$coefficients[8]
+b8 = res2$coefficients[9]
+b9 = res2$coefficients[10]
+b10 = res2$coefficients[11]
+b11 = res2$coefficients[12]
+
+f1 = .1428571 # in previous assignment we found that f1 and f2
+f2 = .2857143 # are two frequencies where the signal has external seasonal trend
+time = 1:N
+cos1 = cos(2*pi*time*f1)
+sin1 = sin(2*pi*time*f1)
+cos2 = cos(2*pi*time*f2)
+sin2 = sin(2*pi*time*f2)
+
+for (index in 1:N) {
+  if (index == 1) {
+    Y[index] = 1
+    YI[index] = 1
+    }
+  if (index ==2 ){
+    Y[index] = b0 + b1*Y[index-1] + b4*x[index] + b5*x[index-1] + b8*cos1[index] + b9*cos2[index] + b10*cos2[index] + b11*sin2[index]
+    YI[index] = b0 + b1*YI[index-1] + b4*x[index] + b5*x[index-1]
+    }
+  if (index > 2){
+    Y[index] = b0 + b1*Y[index-1] + b4*x[index] + b5*x[index-1] + b6*x[index-2] + b8*cos1[index] + b9*cos2[index] + b10*cos2[index] + b11*sin2[index]
+    YI[index] = b0 + b1*YI[index-1] + b4*x[index] + b5*x[index-1] + b6*x[index-2]
+    }
+}
+
+layout(matrix(c(1,2), nrow=2, ncol=1, byrow="FALSE"))
+plot(Y,type="l",xlab="time", main = 'Response of the model (in presence of sinusoids)')
+plot(YI,type="l",xlab="time", main = 'Impulse response of the model (in absence of sinusoids)')
+```
+
+```{r}
+cat("Estimated coefficients:\n")
+for (i in 1:12) {
+  cat(paste0("b", i-1, " = ", coefficients[i], "\n"))
+}
+```
+
+```{r}
+F = c(res2$coefficients[2:4] ) # Since we have 3 feedback term in our best model our
+F = diag(F)
+ev<-eigen(F) # Stability of the model is determined by the lagged feedback terms
+# ev$val
+abs(ev$val)
+```
+
+##### If the coefficients is positive and significant, it suggests that an increase in the response variable at time t−1 leads to an increase in the response variable at time t. Similarly, if the coefficients is negative and significant, it suggests that an increase in the response variable at time t−1 leads to a decrease in the response variable at time t.
+##### Since the absolute value of the eigen values of the feedback matrix is < 1, the model is stable. This is also justified by the response of the model where the systematic oscillations are due to the sinusoids used to model external seasonal trends, but otherwise we can see that output oscillates about an equilibrium value. In absence of sinusoid inputs, we can see the model decays to an equilibrium.
+
+
+## Question 10
+
+```{r}
+plot(demand[4:365], type = 'l', col = 'red', xlab = 'time', ylab = 'elec demand' )
+lines(res2$fitted.values,col="green")
+legend(300, 100, legend=c("Observed", "Fitted"), col=c("red", "green"), lty = 1:1, cex=0.8)
+```
+
+##### The observed and predicted values overlaps, signifying that the model is doing well and could further be tested by predicting the future based on the previous lags. The model could be improved by increasing the sample size or by exploring different models with different number of parameters. 
+##### Overall, the chosen model (res2 - complex model) is doing just fine and can conclude that the model will definitely give close predictions to the observed values. 
+
